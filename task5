@@ -1,0 +1,26 @@
+1. Install and configure Jenkins on a server.
+2. Create a new Jenkins pipeline project by selecting "New Item" and then "Pipeline" from the Jenkins dashboard.
+3. In the pipeline configuration screen, scroll down to the "Pipeline" section and select "Pipeline script" as the definition.
+4. Enter the following script in the "Pipeline script" field:
+
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        sh 'npm install'
+        sh 'npm run build'
+      }
+    }
+    stage('Dockerize') {
+      steps {
+        sh 'docker build -t myapp .'
+        sh 'docker tag myapp:latest myregistry/myapp:latest'
+        withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', usernameVariable: 'DOCKER_REGISTRY_USERNAME', passwordVariable: 'DOCKER_REGISTRY_PASSWORD')]) {
+          sh 'docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD myregistry'
+          sh 'docker push myregistry/myapp:latest'
+        }
+      }
+    }
+  }
+}
